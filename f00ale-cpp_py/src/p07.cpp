@@ -48,10 +48,10 @@ std::tuple<std::string, std::string> p07(const std::string &input) {
             default: return c-'0';
         }
     };
+
     auto handrank = [](const std::string & s) {
         auto tmp = s;
         std::sort(tmp.begin(), tmp.end());
-        int maxsame = 0;
         auto cpy = tmp;
         cpy.erase(std::unique(cpy.begin(), cpy.end()), cpy.end());
         // len 1 = 5 kind, 2 = 4 kind or full house, 3 = triss/2pair, 4 1 pair, 5 highcard
@@ -68,19 +68,14 @@ std::tuple<std::string, std::string> p07(const std::string &input) {
             }
             case 4: return 2;
             case 5: return 1;
+            default: return 0;
         }
     };
 
-    auto cardrank2 = [](char c) {
-        switch(c) {
-            case 'A': return 14;
-            case 'K': return 13;
-            case 'Q': return 12;
-            case 'J': return 1;
-            case 'T': return 10;
-            default: return c-'0';
-        }
+    auto cardrank2 = [&cardrank](char c) {
+        return c == 'J' ? 1 : cardrank(c);
     };
+
     auto handrank2 = [&handrank](const std::string & s) {
         int maxret = 0;
         auto t1 = s;
@@ -90,33 +85,9 @@ std::tuple<std::string, std::string> p07(const std::string &input) {
         if(t1.size() == 1) return 7;
         for(auto r : t1) {
             if(r == 'J') continue;
-            int ret = 0;
             auto tmp = s;
             for(auto & x : tmp) if(x == 'J') x = r;
-            std::sort(tmp.begin(), tmp.end());
-            int maxsame = 0;
-            auto cpy = tmp;
-            cpy.erase(std::unique(cpy.begin(), cpy.end()), cpy.end());
-            // len 1 = 5 kind, 2 = 4 kind or full house, 3 = triss/2pair, 4 1 pair, 5 highcard
-
-            switch (cpy.size()) {
-                case 1:
-                    ret =  7; break;
-                case 2: {
-                    if (tmp[0] == tmp[1] && tmp[3] == tmp[4]) ret = 5; // full house
-                    else ret = 6; // 4 kiind
-                } break;
-                case 3: {
-                    if ((tmp[0] == tmp[1] && tmp[1] == tmp[2]) || (tmp[1] == tmp[2] && tmp[2] == tmp[3]) ||
-                        (tmp[2] == tmp[3] && tmp[3] == tmp[4]))
-                        ret =  4;
-                    else  ret = 3;
-                } break;
-                case 4:
-                    ret= 2; break;
-                case 5:
-                    ret = 1; break;
-            }
+            int ret = handrank(tmp);
             if (ret > maxret) maxret = ret;
         }
         return maxret;
@@ -155,7 +126,6 @@ std::tuple<std::string, std::string> p07(const std::string &input) {
         auto & [h, b] = v[i];
         ans2 += b*(i+1);
     }
-
 
     return {std::to_string(ans1), std::to_string(ans2)};
 }
