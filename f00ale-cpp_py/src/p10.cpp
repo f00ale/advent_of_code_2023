@@ -38,9 +38,6 @@ std::tuple<std::string, std::string> p10(const std::string &input) {
             break;
         }
     }
-    std::cout << posr << ' ' << posc << '\n';
-
-
 
     std::vector<std::tuple<size_t, size_t>> poss;
     poss.emplace_back(posr, posc);
