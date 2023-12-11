@@ -25,10 +25,11 @@ std::tuple<std::string, std::string> p11(const std::string &input) {
 
 
 
-    std::vector<size_t> emptyrows, emptycols;
+    std::vector<size_t> emptyrows(v.size()), emptycols(v[0].size());
     std::string combinedrow(v[0].size(), '.');
     std::vector<std::tuple<size_t,size_t>> points;
 
+    size_t tmp = 0;
     for(size_t r = 0; r < v.size(); r++) {
         bool found = false;
         for(size_t c = 0; c < v[r].size(); c++) {
@@ -38,14 +39,16 @@ std::tuple<std::string, std::string> p11(const std::string &input) {
                 points.emplace_back(r,c);
             }
         }
-        if(!found) emptyrows.push_back(r);
+        if(!found) tmp++;
+        emptyrows[r] = tmp;
     }
-
+    tmp = 0;
     for(size_t c = 0; c < combinedrow.size(); c++) {
-        if(combinedrow[c] != '#') emptycols.push_back(c);
+        if(combinedrow[c] != '#') tmp++;
+        emptycols[c] = tmp;
     }
 
-    for(auto p : {1, 2}) {
+    for(const auto p : {1, 2}) {
         for (size_t p1 = 0; p1 < points.size(); p1++) {
             for (size_t p2 = p1 + 1; p2 < points.size(); p2++) {
                 auto [r1, c1] = points[p1];
@@ -53,12 +56,8 @@ std::tuple<std::string, std::string> p11(const std::string &input) {
                 if (r1 > r2) std::swap(r1, r2);
                 if (c1 > c2) std::swap(c1, c2);
 
-                auto between = [](size_t i1, size_t i2) {
-                    return [i1,i2](size_t i) { return i > i1 && i < i2; };
-                };
-
-                auto crossed_rows = std::count_if(emptyrows.begin(), emptyrows.end(), between(r1,r2));
-                auto crossed_cols = std::count_if(emptycols.begin(), emptycols.end(), between(c1,c2));
+                auto crossed_rows = emptyrows[r2]-emptyrows[r1];
+                auto crossed_cols = emptycols[c2]-emptycols[c1];
 
                 if(p == 2) {
                     crossed_rows *= (1000000-1);
