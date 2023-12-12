@@ -3,69 +3,46 @@
 #include <algorithm>
 #include <iostream>
 #include <tuple>
-#include <set>
+#include <unordered_map>
 
-bool canwork(const std::string & s, const std::vector<int> & ns, int tot, bool final = false) {
-    // check up until first ?
-    auto poss = std::count_if(s.begin(), s.end(), [](char c){return c == '#' || c == '?';});
-    if(poss < tot) return false;
-    auto firstq = s.find('?');
-    bool complete = firstq == std::string::npos;
-    auto sub = s.substr(0, firstq);
-    std::vector<int> tmp;
-    auto pos = sub.find('#', 0);
-    while(pos < sub.size()) {
-        int l = 0;
-        while(sub[pos] == '#' && pos < sub.size()) l++, pos++;
-        tmp.push_back(l);
-        pos = sub.find('#', pos);
-        if(tmp.size()>ns.size()) break;
+template<>
+struct std::hash<std::tuple<std::string::size_type, size_t>> {
+    std::size_t operator()(const std::tuple<std::string::size_type, size_t> &tup) const noexcept {
+        std::size_t h1 = std::hash<std::string::size_type>{}(std::get<0>(tup));
+        std::size_t h2 = std::hash<size_t>{}(std::get<1>(tup));
+        return h1 ^ (h2 << 1);
     }
+};
 
-    if(tmp.size() > ns.size()) {
-        //std::cout << "XXXX\n";
-        return false;
-    }
-    if(!final) {
-    if(!complete && !tmp.empty()) tmp.pop_back();
-    for(size_t i = 0; i < tmp.size(); i++) {
-        if(tmp[i] != ns[i]) return false;
-    }
-    }else {
-        return tmp == ns;
-    }
-//    if(complete) std::cout << s << '\n';
-    return true;
-}
+namespace {
+std::unordered_map<std::tuple<std::string::size_type, size_t>, int64_t> cache;
 
-int64_t recurse(const std::string & ins, const std::vector<int> & ns, int tot) {
-    auto q = ins.find('?');
-    if(q == std::string::npos) return canwork(ins, ns, tot,true) ? 1 : 0;
-    auto s = ins;
-
+int64_t matches(const std::string &s, std::string::size_type pos, std::vector<int>::const_iterator it,
+                std::vector<int>::const_iterator end) {
+    if (pos == 0) cache.clear();
     int64_t ret = 0;
-    s[q] = '.';
-    if(canwork(s,ns, tot)) ret += recurse(s, ns, tot);
-    s[q] = '#';
-    if(canwork(s,ns,tot)) ret += recurse(s, ns, tot);
+    auto key = std::make_tuple(pos, std::distance(it, end));
+    auto fit = cache.find(key);
+    if (fit != cache.end()) return fit->second;
+    if (it == end) {
+        ret = (s.find('#', pos) == std::string::npos ? 1 : 0);
+    } else if (pos >= s.size()) {
+        ret = 0;
+    } else {
+        auto sz = *it;
+        pos = s.find_first_of("#?", pos);
+        bool ok = pos != std::string::npos;
+        for (auto p = pos; ok && p < pos + sz; p++) {
+            if (s[p] == '.') ok = false;
+        }
+        if (ok && s[pos + sz] != '#') ret += matches(s, pos + sz + 1, it + 1, end);
+        if (s[pos] == '?') {
+            ret += matches(s, pos + 1, it, end);
+        }
+    }
+    cache[key] = ret;
     return ret;
 }
-
-int64_t matches(const std::string & s, std::string::size_type pos, std::vector<int>::const_iterator it, std::vector<int>::const_iterator end) {
-    if(it == end) return s.find('#', pos) == std::string::npos ? 1 : 0;
-    if(pos >= s.size()) return 0;
-    auto sz = *it;
-    int64_t ret = 0;
-    pos = s.find_first_of("#?", pos);
-    bool ok = true;
-    for(auto p = pos; p < pos+sz; p++) {
-        if(s[p] == '.') ok = false;
-    }
-    if(ok && s[pos+sz] != '#') ret += matches(s, pos+sz+1, it+1, end);
-    if(s[pos] == '?') {
-        ret += matches(s, pos+1, it, end);
-    }
-    return ret;
 }
 
 std::tuple<std::string, std::string> p12(const std::string &input) {
@@ -100,44 +77,19 @@ std::tuple<std::string, std::string> p12(const std::string &input) {
         }
 
     }
-/*
-    for(const auto & [s,ns] : v) {
-        int tot = 0;
-        for(auto n : ns) tot += n;
-        auto x = recurse(s+"....", ns, tot);
-        auto x2 = matches(s+".....................................", 0, ns.begin(), ns.end());
-        if(x != x2) {
-            std::cout << "fail " << x << ' ' << x2 << ' ' << s; for(auto n : ns) std::cout << ' ' << n; std::cout << '\n';
-        } else {
-            ans1 += x2;
-        }
-    }
-*/
-    auto check = [](const char *cs, const std::vector<int> & ns) {
-        int tot = 0;
-        std::string s = cs;
-        for(auto n : ns) tot += n;
-        auto a1 = recurse(s, ns, tot);
-        auto a2 = matches(s+".", 0, ns.begin(), ns.end());
-        std::cout << s;
-        for(auto n : ns) std::cout << ' ' << n; std::cout << " -> ";
-        std::cout << a1 << ' ' << a2 << '\n';
-    };
 
-    check("..#", {1});
-    check("..?", {1});
-    check("..##", {2});
-    check("..??", {2});
-    check("..??", {1});
+    for(const auto & [s,ns] : v) {
+        ans1 += matches(s+".", 0, ns.begin(), ns.end());
+    }
 
     for(auto & [s,ns] : v) {
-
-        auto s2 = s+"?"+s+"?"+s+"?"+s+"?"+s;
+        auto s2 = s;
         auto ns2 = ns;
         for(int i = 0; i< 4; i++) {
+            s2 += "?"+s;
             for(auto n:ns) ns2.push_back(n);
         }
-//        ans2 += matches(s2+".", 0, ns2.begin(), ns2.end());
+        ans2 += matches(s2+".", 0, ns2.begin(), ns2.end());
     }
 
     return {std::to_string(ans1), std::to_string(ans2)};
