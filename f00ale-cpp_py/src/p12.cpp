@@ -36,7 +36,7 @@ int64_t matches(const std::string &s, std::string::size_type pos, std::vector<in
             if (s[p] == '.') ok = false;
         }
         if (ok && s[pos + sz] != '#') ret += matches(s, pos + sz + 1, it + 1, end);
-        if (s[pos] == '?') {
+        if (pos < s.size() && s[pos] == '?') {
             ret += matches(s, pos + 1, it, end);
         }
     }

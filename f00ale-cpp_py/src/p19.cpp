@@ -91,7 +91,7 @@ std::tuple<std::string, std::string> p19(const std::string &input) {
                     char cc = 0;
                     char gt = 0;
                     std::string target;
-                    int num;
+                    int num = 0;
                     for(size_t idx = brace; idx < line.size(); idx++) {
                         char q = line[idx];
                         if(q == ',' || q == '}') {
