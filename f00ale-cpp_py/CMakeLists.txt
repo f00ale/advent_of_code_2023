@@ -34,7 +34,7 @@ add_library(aoc23_problems OBJECT
         src/p21.cpp
         src/p22.cpp
         src/p23.cpp
-#        src/p24.cpp
+        src/p24.cpp
 #        src/p25.cpp
         )
 
