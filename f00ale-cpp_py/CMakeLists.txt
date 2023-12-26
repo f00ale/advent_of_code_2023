@@ -35,7 +35,7 @@ add_library(aoc23_problems OBJECT
         src/p22.cpp
         src/p23.cpp
         src/p24.cpp
-#        src/p25.cpp
+        src/p25.cpp
         )
 
 add_executable(aoc23 src/main.cpp)
